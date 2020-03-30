@@ -39,3 +39,9 @@ func VerifyToken(tokenString string) (email string, err error) {
 	}
 	return "", err
 }
+
+// ShouldGenerateTheToken will return true/false if the token will expire within 60 seconds
+func ShouldGenerateTheToken() bool {
+	claims := &Claims{}
+	return time.Unix(claims.ExpiresAt, 0).Sub(time.Now()) > 60*time.Second
+}

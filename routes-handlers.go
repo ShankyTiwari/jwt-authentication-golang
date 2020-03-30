@@ -198,6 +198,46 @@ func GetUserDetails(response http.ResponseWriter, request *http.Request) {
 	}
 }
 
+// RefreshToken Used for refreshing the user token
+func RefreshToken(response http.ResponseWriter, request *http.Request) {
+	var result UserDetails
+	var errorResponse = ErrorResponse{
+		Code: http.StatusInternalServerError, Message: "It's not you it's me.",
+	}
+	bearerToken := request.Header.Get("Authorization")
+	var authorizationToken = strings.Split(bearerToken, " ")[1]
+
+	email, _ := VerifyToken(authorizationToken)
+	if email == "" {
+		errorResponse.Message = "Invalid Token"
+		errorResponse.Code = http.StatusBadRequest
+		returnErrorResponse(response, request, errorResponse)
+	} else {
+
+		var shouldGenerateTheToken = ShouldGenerateTheToken()
+
+		if shouldGenerateTheToken {
+			errorResponse.Message = "Try after sometime"
+			errorResponse.Code = http.StatusBadRequest
+			returnErrorResponse(response, request, errorResponse)
+		} else {
+			var successResponse = SuccessResponse{
+				Code:     http.StatusOK,
+				Message:  "Your token is renewed",
+				Response: result.Name,
+			}
+
+			successJSONResponse, jsonError := json.Marshal(successResponse)
+
+			if jsonError != nil {
+				returnErrorResponse(response, request, errorResponse)
+			}
+			response.Header().Set("Content-Type", "application/json")
+			response.Write(successJSONResponse)
+		}
+	}
+}
+
 func returnErrorResponse(response http.ResponseWriter, request *http.Request, errorMesage ErrorResponse) {
 	httpResponse := &ErrorResponse{Code: errorMesage.Code, Message: errorMesage.Message}
 	jsonResponse, err := json.Marshal(httpResponse)
